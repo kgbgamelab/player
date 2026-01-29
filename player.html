@@ -269,4 +269,244 @@
 
             <div class="ap-progress">
               <div class="ap-time" id="apCur">0:00</div>
-              <input class="ap-range" id="apSe
+              <input class="ap-range" id="apSeek" type="range" min="0" max="100" value="0" step="0.1">
+              <div class="ap-time" id="apDur">0:00</div>
+            </div>
+
+            <div class="ap-controls">
+              <button class="ap-btn" id="apShuffle" title="${t.shuffleOff}">${ICONS.shuffle}</button>
+              <button class="ap-btn" id="apPrev" title="Prev">${ICONS.prev}</button>
+              <button class="ap-btn ap-main" id="apPlay" title="Play/Pause">${ICONS.play}</button>
+              <button class="ap-btn" id="apNext" title="Next">${ICONS.next}</button>
+              <button class="ap-btn" id="apToggleList" title="${t.playlist}">${ICONS.list}</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-eq" id="apEq" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="ap-badge" id="apBadge"></div>
+
+        <div class="ap-vol">
+          ${ICONS.volume}
+          <span>${t.vol}</span>
+          <input id="apVol" type="range" min="0" max="100" value="90"/>
+        </div>
+      </div>
+    `;
+
+    const el = {
+      cover: document.getElementById("apCover"),
+      title: document.getElementById("apTitle"),
+      sub: document.getElementById("apSub"),
+      cur: document.getElementById("apCur"),
+      dur: document.getElementById("apDur"),
+      seek: document.getElementById("apSeek"),
+      play: document.getElementById("apPlay"),
+      prev: document.getElementById("apPrev"),
+      next: document.getElementById("apNext"),
+      list: document.getElementById("apList"),
+      toggleList: document.getElementById("apToggleList"),
+      shuffle: document.getElementById("apShuffle"),
+      badge: document.getElementById("apBadge"),
+      eq: document.getElementById("apEq"),
+      vol: document.getElementById("apVol")
+    };
+
+    el.cover.src = CFG.coverUrl;
+
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audio.volume = Math.max(0, Math.min(1, Number(CFG.volume ?? 0.9)));
+    el.vol.value = Math.round(audio.volume * 100);
+
+    let tracks = [];
+    let idx = 0;
+    let isShuffle = false;
+    let shuffledOrder = [];
+
+    async function loadFromGithubFolder(){
+      const g = CFG.source.github;
+      const api = `https://api.github.com/repos/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/contents/${encodeURIComponent(g.path)}?ref=${encodeURIComponent(g.branch)}`;
+
+      el.badge.textContent = t.loading;
+
+      const res = await fetch(api);
+      if(!res.ok){
+        const msg = (res.status === 403) ? "GitHub API rate limit/forbidden" : ("GitHub API: " + res.status);
+        throw new Error(msg);
+      }
+
+      const items = await res.json();
+      const exts = [".mp3",".ogg",".wav",".m4a"];
+      const files = items
+        .filter(x => x.type === "file")
+        .filter(x => exts.some(e => (x.name||"").toLowerCase().endsWith(e)));
+
+      return files.map(f => {
+        const raw = `https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch}/${g.path}/${encodeURIComponent(f.name)}`.replace(/%2F/g,"/");
+        const nice = f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");
+        return { title: nice, subtitle: `${g.repo} • ${g.path}`, url: raw };
+      });
+    }
+
+    function buildPlaylist(){
+      el.list.innerHTML = tracks.map((tr, i) => `
+        <div class="ap-track ${i===currentRealIndex() ? "active":""}" data-i="${i}">
+          <div style="min-width:0; overflow:hidden;">
+            <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700;">${escapeHtml(tr.title || "Track")}</div>
+            <small style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${escapeHtml(tr.subtitle || "")}</small>
+          </div>
+          <div style="opacity:.85;">${i===currentRealIndex() ? "▶" : ""}</div>
+        </div>
+      `).join("");
+
+      [...el.list.querySelectorAll(".ap-track")].forEach(node=>{
+        node.addEventListener("click", ()=>{
+          const real = Number(node.dataset.i);
+          idx = 0;
+          isShuffle = false;
+          playRealIndex(real, true);
+        });
+      });
+    }
+
+    function currentRealIndex(){
+      if(!isShuffle) return idx;
+      return shuffledOrder[idx] ?? 0;
+    }
+
+    function setNowPlaying(realIndex){
+      const tr = tracks[realIndex];
+      el.title.textContent = tr?.title || "—";
+      el.sub.textContent = tr?.subtitle || "—";
+      el.badge.textContent = isShuffle ? t.shuffleOn : t.shuffleOff;
+      buildPlaylist();
+    }
+
+    async function playRealIndex(realIndex, autoplay){
+      realIndex = Math.max(0, Math.min(realIndex, tracks.length-1));
+      setNowPlaying(realIndex);
+      const tr = tracks[realIndex];
+
+      audio.src = tr.url;
+      audio.load();
+
+      if(autoplay){
+        try{
+          await audio.play();
+        }catch(err){
+          // Вот здесь как раз увидим причину “не играет”
+          el.badge.textContent = `Play blocked/error: ${String(err?.message || err)} • URL: ${tr.url}`;
+        }
+      }
+      el.play.innerHTML = audio.paused ? ICONS.play : ICONS.pause;
+    }
+
+    async function playIndex(i, autoplay){
+      idx = (i + tracks.length) % tracks.length;
+      const real = currentRealIndex();
+      await playRealIndex(real, autoplay);
+    }
+
+    function rebuildShuffle(){
+      shuffledOrder = [...Array(tracks.length).keys()];
+      for(let i=shuffledOrder.length-1; i>0; i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [shuffledOrder[i],shuffledOrder[j]] = [shuffledOrder[j],shuffledOrder[i]];
+      }
+      idx = 0;
+    }
+
+    function next(){ if(tracks.length>1) playIndex(idx+1, true); }
+    function prev(){ if(tracks.length>1) playIndex(idx-1, true); }
+
+    // UI
+    el.play.addEventListener("click", async ()=>{
+      if(!audio.src){
+        await playIndex(0, true);
+        return;
+      }
+      if(audio.paused){
+        try{ await audio.play(); }
+        catch(err){ el.badge.textContent = `Play blocked/error: ${String(err?.message || err)}`; }
+      } else {
+        audio.pause();
+      }
+      el.play.innerHTML = audio.paused ? ICONS.play : ICONS.pause;
+    });
+
+    el.next.addEventListener("click", next);
+    el.prev.addEventListener("click", prev);
+
+    el.toggleList.addEventListener("click", ()=>{
+      el.list.classList.toggle("open");
+    });
+
+    el.shuffle.addEventListener("click", ()=>{
+      isShuffle = !isShuffle;
+      if(isShuffle) rebuildShuffle();
+      el.badge.textContent = isShuffle ? t.shuffleOn : t.shuffleOff;
+      buildPlaylist();
+    });
+
+    // Volume
+    el.vol.addEventListener("input", ()=>{
+      audio.volume = Math.max(0, Math.min(1, Number(el.vol.value)/100));
+    });
+
+    audio.addEventListener("loadedmetadata", ()=> el.dur.textContent = formatTime(audio.duration));
+    audio.addEventListener("timeupdate", ()=>{
+      el.cur.textContent = formatTime(audio.currentTime);
+      if(isFinite(audio.duration) && audio.duration>0){
+        el.seek.value = (audio.currentTime/audio.duration)*100;
+      }
+    });
+    el.seek.addEventListener("input", ()=>{
+      if(isFinite(audio.duration) && audio.duration>0){
+        audio.currentTime = (Number(el.seek.value)/100)*audio.duration;
+      }
+    });
+
+    // Error debug (ключ для “не играет”)
+    audio.addEventListener("error", ()=>{
+      const code = audio.error?.code;
+      const msg =
+        code === 1 ? "MEDIA_ERR_ABORTED" :
+        code === 2 ? "MEDIA_ERR_NETWORK" :
+        code === 3 ? "MEDIA_ERR_DECODE" :
+        code === 4 ? "MEDIA_ERR_SRC_NOT_SUPPORTED" :
+        "UNKNOWN";
+      el.badge.textContent = `Audio error: ${msg} (code ${code ?? "?"}) • ${audio.src}`;
+    });
+
+    audio.addEventListener("play", ()=>{ el.play.innerHTML = ICONS.pause; el.eq.classList.add("playing"); });
+    audio.addEventListener("pause", ()=>{ el.play.innerHTML = ICONS.play; el.eq.classList.remove("playing"); });
+    audio.addEventListener("ended", next);
+
+    // Boot
+    (async function init(){
+      try{
+        if(CFG.source.mode === "githubFolder") tracks = await loadFromGithubFolder();
+        else tracks = CFG.source.raw || [];
+
+        if(!tracks.length){
+          el.title.textContent = t.error;
+          el.sub.textContent = "No tracks found";
+          el.badge.textContent = "";
+          return;
+        }
+        buildPlaylist();
+        setNowPlaying(0);
+      }catch(e){
+        el.title.textContent = t.error;
+        el.sub.textContent = String(e.message || e);
+        el.badge.textContent = "";
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>
