@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KGB Audio Player Editor</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family: system-ui;
+  background:#07070c;
+  color:white;
+}
+
+.wrapper{
+  max-width:1400px;
+  margin:auto;
+  padding:40px;
+  display:grid;
+  grid-template-columns:420px 1fr;
+  gap:40px;
+}
+
+/* LEFT PANEL */
+
+.panel{
+  background:rgba(255,255,255,0.04);
+  border-radius:20px;
+  padding:24px;
+  backdrop-filter: blur(10px);
+}
+
+h2{
+  margin-top:0;
+  font-size:22px;
+}
+
+label{
+  display:block;
+  margin-top:18px;
+  margin-bottom:6px;
+  opacity:.8;
+}
+
+input, select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  background:#141424;
+  color:white;
+}
+
+/* color squares */
+
+.colors{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.color{
+  width:36px;
+  height:36px;
+  border-radius:8px;
+  cursor:pointer;
+  border:2px solid transparent;
+}
+
+.color.active{
+  border:2px solid white;
+}
+
+/* BUTTON */
+
+button{
+  margin-top:26px;
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:none;
+  font-weight:700;
+  cursor:pointer;
+  background:linear-gradient(90deg,#7c5cff,#d43cff);
+  color:white;
+  font-size:16px;
+}
+
+/* CODE */
+
+textarea{
+  width:100%;
+  height:160px;
+  margin-top:16px;
+  border-radius:14px;
+  background:#0d0d18;
+  color:#6cf;
+  padding:12px;
+  border:none;
+  resize:none;
+}
+
+/* PREVIEW */
+
+.preview{
+  background: radial-gradient(circle at top,#1a1633,#07070c);
+  border-radius:24px;
+  padding:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+iframe{
+  width:100%;
+  height:320px;
+  border:none;
+}
+
+.tip{
+  opacity:.6;
+  font-size:13px;
+  margin-top:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+  <!-- SETTINGS -->
+  <div class="panel">
+
+    <h2>🎧 Audio Player</h2>
+
+    <label>Язык</label>
+    <select id="lang">
+      <option value="ru">Русский</option>
+      <option value="en">English</option>
+    </select>
+
+    <label>Обложка (URL)</label>
+    <input id="cover" value="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad"/>
+
+    <label>Owner</label>
+    <input id="owner" value="kgbgamelab"/>
+
+    <label>Repo</label>
+    <input id="repo" value="player"/>
+
+    <label>Branch</label>
+    <input id="branch" value="main"/>
+
+    <label>Folder</label>
+    <input id="path" value="files"/>
+
+    <label>Цвет плеера</label>
+    <div class="colors" id="colors"></div>
+
+    <button onclick="generate()">Получить iframe</button>
+
+    <textarea id="code" placeholder="iframe появится здесь"></textarea>
+
+    <div class="tip">
+      Вставь iframe в блок HTML в Genially.
+    </div>
+
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview">
+    <iframe id="preview"></iframe>
+  </div>
+
+</div>
+
+
+<script>
+
+/* COLORS */
+
+const palette=[
+["rgba(120,90,255,0.75)","rgba(200,60,255,0.55)"],
+["rgba(0,200,255,.7)","rgba(0,120,255,.6)"],
+["rgba(255,80,150,.75)","rgba(255,0,200,.6)"],
+["rgba(80,255,180,.75)","rgba(0,255,120,.55)"]
+];
+
+let selected=palette[0];
+
+const colorsDiv=document.getElementById("colors");
+
+palette.forEach((p,i)=>{
+  const c=document.createElement("div");
+  c.className="color"+(i===0?" active":"");
+  c.style.background=`linear-gradient(45deg,${p[0]},${p[1]})`;
+
+  c.onclick=()=>{
+    document.querySelectorAll(".color").forEach(x=>x.classList.remove("active"));
+    c.classList.add("active");
+    selected=p;
+    generate();
+  }
+
+  colorsDiv.appendChild(c);
+});
+
+
+/* BASE64 CONFIG */
+
+function makeConfig(){
+
+  const config={
+    lang:lang.value,
+    coverUrl:cover.value,
+    theme:{
+      gradA:selected[0],
+      gradB:selected[1]
+    },
+    source:{
+      mode:"githubFolder",
+      github:{
+        owner:owner.value,
+        repo:repo.value,
+        branch:branch.value,
+        path:path.value
+      }
+    }
+  };
+
+  return btoa(unescape(encodeURIComponent(JSON.stringify(config))));
+}
+
+
+/* GENERATE IFRAME */
+
+function generate(){
+
+  const base="https://kgbgamelab.github.io/audioplayer/player.html";
+
+  const encoded=makeConfig();
+
+  const src=base+"?c="+encoded;
+
+  const iframe=`<iframe 
+src="${src}"
+allow="autoplay"
+style="width:100%;height:320px;border:none;background:transparent;"
+></iframe>`;
+
+  code.value=iframe;
+
+  preview.src=src;
+}
+
+generate();
+
+</script>
+
+</body>
+</html>
