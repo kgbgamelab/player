@@ -21,11 +21,9 @@
     html,body{ height:100%; }
     body{
       margin:0;
-      background: transparent; /* важно для Genially */
+      background: transparent;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:flex; align-items:center; justify-content:center;
     }
 
     .ap-wrap{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; background: var(--ap-bg); }
@@ -42,8 +40,7 @@
 
     .ap-row{ display:flex; gap:18px; align-items:center; }
     .ap-cover{
-      width:140px; height:140px; border-radius:999px; overflow:hidden;
-      flex:0 0 auto;
+      width:140px; height:140px; border-radius:999px; overflow:hidden; flex:0 0 auto;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       border: 6px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.08);
@@ -62,17 +59,6 @@
       white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
     }
 
-    .ap-top-actions{ display:flex; gap:10px; align-items:center; flex:0 0 auto; }
-    .ap-icon-btn{
-      width:44px; height:44px; border-radius:999px; border:0;
-      cursor:pointer; background: var(--ap-btn); color: var(--ap-text);
-      display:grid; place-items:center;
-      transition: transform .08s ease, background .12s ease;
-      user-select:none;
-    }
-    .ap-icon-btn:hover{ background: var(--ap-btn-hover); }
-    .ap-icon-btn:active{ transform: scale(0.98); }
-
     .ap-progress{ margin-top: 16px; display:flex; align-items:center; gap:14px; }
     .ap-time{ font-variant-numeric: tabular-nums; color: var(--ap-muted); min-width: 56px; }
     .ap-range{
@@ -89,29 +75,28 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.22);
     }
 
-    .ap-controls{ margin-top: 18px; display:flex; justify-content:center; gap:14px; }
-    .ap-main-btn{
-      width:68px; height:68px; border-radius:999px; border:0;
-      cursor:pointer; background: rgba(255,255,255,0.22);
-      color: var(--ap-text); display:grid; place-items:center;
-      box-shadow: 0 12px 20px rgba(0,0,0,0.18);
-      transition: transform .08s ease, background .12s ease;
-      user-select:none;
-    }
-    .ap-main-btn:hover{ background: rgba(255,255,255,0.28); }
-    .ap-main-btn:active{ transform: scale(0.985); }
-    .ap-small-btn{
-      width:58px; height:58px; border-radius:999px; border:0;
+    .ap-controls{ margin-top: 18px; display:flex; justify-content:center; gap:14px; align-items:center; flex-wrap:wrap; }
+
+    /* Увеличили кнопки */
+    .ap-btn{
+      width:62px; height:62px; border-radius:999px; border:0;
       cursor:pointer; background: rgba(255,255,255,0.16);
       color: var(--ap-text); display:grid; place-items:center;
       user-select:none;
+      transition: transform .08s ease, background .12s ease;
+    }
+    .ap-btn:hover{ background: rgba(255,255,255,0.22); }
+    .ap-btn:active{ transform: scale(0.985); }
+
+    .ap-main{
+      width:76px; height:76px;
+      background: rgba(255,255,255,0.22);
+      box-shadow: 0 12px 20px rgba(0,0,0,0.18);
     }
 
-    .ap-badge{
-      position:absolute; left:18px; bottom:14px;
-      display:flex; gap:10px; opacity:0.9; align-items:center;
-      color: rgba(255,255,255,0.85); font-size: 13px;
-    }
+    /* SVG иконки */
+    .ap-btn svg{ width:30px; height:30px; }
+    .ap-main svg{ width:34px; height:34px; }
 
     .ap-playlist{
       position:absolute; right:14px; top:14px;
@@ -134,6 +119,35 @@
     .ap-track.active{ background: rgba(255,255,255,0.16); }
     .ap-track small{ color: rgba(255,255,255,0.7); }
 
+    .ap-badge{
+      position:absolute; left:18px; bottom:14px;
+      display:flex; gap:10px; opacity:0.9; align-items:center;
+      color: rgba(255,255,255,0.85); font-size: 13px;
+      max-width: calc(100% - 220px);
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* Volume */
+    .ap-vol{
+      position:absolute;
+      right:18px;
+      bottom:14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 8px 10px;
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .ap-vol input{ width:110px; }
+
+    /* Eq */
     .ap-eq{
       position:absolute; left: 24px; bottom: 22px;
       display:flex; gap:6px; opacity:0.35;
@@ -150,13 +164,11 @@
     .ap-eq.playing span:nth-child(5){ animation-delay: .16s; }
     @keyframes apBar{ 0%,100%{ transform: scaleY(0.55); } 50%{ transform: scaleY(1.55); } }
 
-    /* маленький адаптив */
     @media (max-width: 720px){
       .ap-row{ flex-direction: column; align-items: stretch; }
       .ap-cover{ margin: 0 auto; }
       .ap-title{ font-size: 30px; text-align:center; }
       .ap-sub{ text-align:center; }
-      .ap-top-actions{ justify-content:center; }
     }
   </style>
 </head>
@@ -177,27 +189,25 @@
       source: {
         mode: "githubFolder", // githubFolder | rawList
         github: { owner:"kgbgamelab", repo:"player", branch:"main", path:"files" },
-        raw: [] // [{title, subtitle, url}]
-      }
+        raw: []
+      },
+      volume: 0.9
     };
 
     const T = {
-      ru: { playlist:"Плейлист", shuffleOn:"Рандом: ВКЛ", shuffleOff:"Рандом: ВЫКЛ", loading:"Загрузка...", error:"Ошибка загрузки" },
-      en: { playlist:"Playlist", shuffleOn:"Shuffle: ON", shuffleOff:"Shuffle: OFF", loading:"Loading...", error:"Load error" }
+      ru: { playlist:"Плейлист", shuffleOn:"Рандом: ВКЛ", shuffleOff:"Рандом: ВЫКЛ", loading:"Загрузка...", error:"Ошибка загрузки", vol:"Громк." },
+      en: { playlist:"Playlist", shuffleOn:"Shuffle: ON", shuffleOff:"Shuffle: OFF", loading:"Loading...", error:"Load error", vol:"Vol" }
     };
 
-    function safeParseConfig(){
-      const qs = new URLSearchParams(location.search);
-      const c = qs.get("c");
-      if(!c) return DEFAULTS;
-      try{
-        const json = decodeURIComponent(escape(atob(c)));
-        const obj = JSON.parse(json);
-        return deepMerge(structuredClone(DEFAULTS), obj);
-      }catch(e){
-        return DEFAULTS;
-      }
-    }
+    const ICONS = {
+      play: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7z"/></svg>`,
+      pause:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>`,
+      prev: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 19l-9-7 9-7v14z"/><path d="M22 5v14"/></svg>`,
+      next: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 5l9 7-9 7V5z"/><path d="M2 5v14"/></svg>`,
+      shuffle:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20l6-6"/><path d="M4 4l6 6"/><path d="M10 14l4 4"/><path d="M14 10l7-7"/><path d="M16 21h5v-5"/></svg>`,
+      list:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`,
+      volume:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5l-6 5H2v4h3l6 5z"/><path d="M19 9a4 4 0 0 1 0 6"/><path d="M21 7a7 7 0 0 1 0 10"/></svg>`
+    };
 
     function deepMerge(a,b){
       if(typeof b !== "object" || b === null) return a;
@@ -209,6 +219,18 @@
         }
       }
       return a;
+    }
+
+    function safeParseConfig(){
+      const qs = new URLSearchParams(location.search);
+      const c = qs.get("c");
+      if(!c) return DEFAULTS;
+      try{
+        const json = decodeURIComponent(escape(atob(c)));
+        return deepMerge(structuredClone(DEFAULTS), JSON.parse(json));
+      }catch(e){
+        return DEFAULTS;
+      }
     }
 
     function escapeHtml(str){
@@ -247,211 +269,4 @@
 
             <div class="ap-progress">
               <div class="ap-time" id="apCur">0:00</div>
-              <input class="ap-range" id="apSeek" type="range" min="0" max="100" value="0" step="0.1">
-              <div class="ap-time" id="apDur">0:00</div>
-            </div>
-
-            <div class="ap-controls">
-              <button class="ap-small-btn" id="apShuffle" title="${t.shuffleOff}">🔀</button>
-              <button class="ap-small-btn" id="apPrev" title="Prev">⏮</button>
-              <button class="ap-main-btn" id="apPlay" title="Play/Pause">▶</button>
-              <button class="ap-small-btn" id="apNext" title="Next">⏭</button>
-              <button class="ap-small-btn" id="apToggleList" title="${t.playlist}">≡</button>
-            </div>
-          </div>
-
-          <div class="ap-top-actions">
-            <button class="ap-icon-btn" id="apLike" title="Like">♡</button>
-            <button class="ap-icon-btn" id="apInfo" title="Info">ⓘ</button>
-          </div>
-        </div>
-
-        <div class="ap-eq" id="apEq" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-
-        <div class="ap-badge" id="apBadge"></div>
-      </div>
-    `;
-
-    const el = {
-      cover: document.getElementById("apCover"),
-      title: document.getElementById("apTitle"),
-      sub: document.getElementById("apSub"),
-      cur: document.getElementById("apCur"),
-      dur: document.getElementById("apDur"),
-      seek: document.getElementById("apSeek"),
-      play: document.getElementById("apPlay"),
-      prev: document.getElementById("apPrev"),
-      next: document.getElementById("apNext"),
-      list: document.getElementById("apList"),
-      toggleList: document.getElementById("apToggleList"),
-      shuffle: document.getElementById("apShuffle"),
-      badge: document.getElementById("apBadge"),
-      eq: document.getElementById("apEq")
-    };
-
-    el.cover.src = CFG.coverUrl;
-
-    const audio = new Audio();
-    audio.preload = "metadata";
-
-    let tracks = [];
-    let idx = 0;
-    let isShuffle = false;
-    let shuffledOrder = [];
-
-    async function loadFromGithubFolder(){
-      const g = CFG.source.github;
-      const api = `https://api.github.com/repos/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/contents/${encodeURIComponent(g.path)}?ref=${encodeURIComponent(g.branch)}`;
-      el.badge.textContent = t.loading;
-
-      const res = await fetch(api);
-      if(!res.ok) throw new Error("GitHub API: " + res.status);
-
-      const items = await res.json();
-      const exts = [".mp3",".ogg",".wav",".m4a"];
-      const files = items
-        .filter(x => x.type === "file")
-        .filter(x => exts.some(e => (x.name||"").toLowerCase().endsWith(e)));
-
-      return files.map(f => {
-        const raw = `https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch}/${g.path}/${encodeURIComponent(f.name)}`.replace(/%2F/g,"/");
-        const nice = f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");
-        return { title: nice, subtitle: `${g.repo} • ${g.path}`, url: raw };
-      });
-    }
-
-    function buildPlaylist(){
-      el.list.innerHTML = tracks.map((tr, i) => `
-        <div class="ap-track ${i===currentRealIndex() ? "active":""}" data-i="${i}">
-          <div style="min-width:0; overflow:hidden;">
-            <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700;">${escapeHtml(tr.title || "Track")}</div>
-            <small style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${escapeHtml(tr.subtitle || "")}</small>
-          </div>
-          <div style="opacity:.85;">${i===currentRealIndex() ? "▶" : ""}</div>
-        </div>
-      `).join("");
-
-      [...el.list.querySelectorAll(".ap-track")].forEach(node=>{
-        node.addEventListener("click", ()=>{
-          const real = Number(node.dataset.i);
-          // при клике по плейлисту — всегда играем выбранный трек (без хитростей)
-          idx = 0;
-          isShuffle = false;
-          playRealIndex(real, true);
-        });
-      });
-    }
-
-    function currentRealIndex(){
-      if(!isShuffle) return idx;
-      return shuffledOrder[idx] ?? 0;
-    }
-
-    function setNowPlaying(realIndex){
-      const tr = tracks[realIndex];
-      el.title.textContent = tr?.title || "—";
-      el.sub.textContent = tr?.subtitle || "—";
-      el.badge.textContent = isShuffle ? t.shuffleOn : t.shuffleOff;
-      buildPlaylist();
-    }
-
-    async function playRealIndex(realIndex, autoplay){
-      realIndex = Math.max(0, Math.min(realIndex, tracks.length-1));
-      setNowPlaying(realIndex);
-      const tr = tracks[realIndex];
-      audio.src = tr.url;
-      audio.load();
-      if(autoplay) await audio.play();
-      el.play.textContent = audio.paused ? "▶" : "⏸";
-    }
-
-    async function playIndex(i, autoplay){
-      idx = (i + tracks.length) % tracks.length;
-      const real = currentRealIndex();
-      await playRealIndex(real, autoplay);
-    }
-
-    function rebuildShuffle(){
-      shuffledOrder = [...Array(tracks.length).keys()];
-      for(let i=shuffledOrder.length-1; i>0; i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [shuffledOrder[i],shuffledOrder[j]] = [shuffledOrder[j],shuffledOrder[i]];
-      }
-      idx = 0;
-    }
-
-    function next(){ if(tracks.length>1) playIndex(idx+1, true); }
-    function prev(){ if(tracks.length>1) playIndex(idx-1, true); }
-
-    // UI
-    el.play.addEventListener("click", async ()=>{
-      if(!audio.src){
-        await playIndex(0, true);
-        return;
-      }
-      if(audio.paused) await audio.play();
-      else audio.pause();
-      el.play.textContent = audio.paused ? "▶" : "⏸";
-    });
-    el.next.addEventListener("click", next);
-    el.prev.addEventListener("click", prev);
-
-    el.toggleList.addEventListener("click", ()=>{
-      el.list.classList.toggle("open");
-    });
-
-    el.shuffle.addEventListener("click", ()=>{
-      isShuffle = !isShuffle;
-      if(isShuffle) rebuildShuffle();
-      el.badge.textContent = isShuffle ? t.shuffleOn : t.shuffleOff;
-      buildPlaylist();
-    });
-
-    audio.addEventListener("loadedmetadata", ()=> el.dur.textContent = formatTime(audio.duration));
-    audio.addEventListener("timeupdate", ()=>{
-      el.cur.textContent = formatTime(audio.currentTime);
-      if(isFinite(audio.duration) && audio.duration>0){
-        el.seek.value = (audio.currentTime/audio.duration)*100;
-      }
-    });
-    el.seek.addEventListener("input", ()=>{
-      if(isFinite(audio.duration) && audio.duration>0){
-        audio.currentTime = (Number(el.seek.value)/100)*audio.duration;
-      }
-    });
-
-    audio.addEventListener("play", ()=>{ el.play.textContent="⏸"; el.eq.classList.add("playing"); });
-    audio.addEventListener("pause", ()=>{ el.play.textContent="▶"; el.eq.classList.remove("playing"); });
-    audio.addEventListener("ended", next);
-
-    // Boot
-    (async function init(){
-      try{
-        if(CFG.source.mode === "githubFolder"){
-          tracks = await loadFromGithubFolder();
-        } else {
-          tracks = CFG.source.raw || [];
-        }
-
-        if(!tracks.length){
-          el.title.textContent = t.error;
-          el.sub.textContent = "No tracks found";
-          el.badge.textContent = "";
-          return;
-        }
-
-        buildPlaylist();
-        setNowPlaying(0);
-        el.badge.textContent = isShuffle ? t.shuffleOn : t.shuffleOff;
-      }catch(e){
-        el.title.textContent = t.error;
-        el.sub.textContent = String(e.message || e);
-        el.badge.textContent = "";
-      }
-    })();
-  })();
-  </script>
-</body>
-</html>
+              <input class="ap-range" id="apSe
